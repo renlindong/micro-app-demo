@@ -23,6 +23,7 @@ const MicroApp: React.FC<MicroAppProps> = (props) => {
   const { src, style, className } = props;
 
   const [shadowRoot, setShadowRoot] = useState<ShadowRoot | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null)
   const createShadowRoot = (ele: HTMLDivElement) => {
     if (ele && !ele.shadowRoot) {
       const root = ele.attachShadow({ mode: "open" });
@@ -67,6 +68,24 @@ const MicroApp: React.FC<MicroAppProps> = (props) => {
     }
   }, []);
 
+  const handleLoad = () => {
+    console.log(iframeRef)
+    const win = iframeRef.current?.contentWindow
+    if (win) {
+      // @ts-ignore
+      win.__wujie__ = {
+        name: "wujie"
+      }
+    }
+    
+    // const sc = `(function(window) { console.log(window)) })(window.__wujie__)`
+    const sc = iframeRef.current?.contentDocument?.createElement('script')
+    if (sc) {
+      sc.innerText = `(function(window) { console.log(window) })(window.__wujie__)`
+      iframeRef.current?.contentDocument?.body.appendChild(sc)
+    }
+  }
+
   return (
     <div
       ref={createShadowRoot}
@@ -74,7 +93,7 @@ const MicroApp: React.FC<MicroAppProps> = (props) => {
       style={style}
     >
       {shadowRoot && <MicroAppContent container={shadowRoot}>
-        <iframe style={{ width: 0, height: 0 }} frameBorder={0} srcDoc={doc} />
+        <iframe ref={iframeRef} style={{ width: 0, height: 0 }} frameBorder={0} srcDoc={doc} onLoad={handleLoad} />
         <div>123</div>
       </MicroAppContent>}
     </div>
