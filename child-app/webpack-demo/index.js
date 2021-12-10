@@ -1,7 +1,6 @@
-'use strict';
-
-const e = React.createElement;
-
+// import { add } from "lodash"
+import React from "react";
+import ReactDOM from "react-dom";
 class LikeButton extends React.Component {
   constructor(props) {
     super(props);
@@ -13,7 +12,7 @@ class LikeButton extends React.Component {
       return 'You liked this.';
     }
 
-    return e(
+    return React.createElement(
       'button',
       { onClick: () => this.setState({ liked: true }) },
       'Like'
@@ -21,5 +20,13 @@ class LikeButton extends React.Component {
   }
 }
 
-const domContainer = document.querySelector('#like_button_container');
-ReactDOM.render(e(LikeButton), domContainer);
+const run = () => {
+  const container = document.getElementById('root')
+  console.log(container)
+  ReactDOM.render(
+    React.createElement(LikeButton),
+    container
+  )
+}
+
+run()

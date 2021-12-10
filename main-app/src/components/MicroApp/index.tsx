@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
 import classNames from "classnames";
 
-import { patchDocument2Shadow } from "./utils"
+import { patchDocument2Shadow, createProxy } from "./utils"
 
 export type MicroAppProps = {
   className?: string;
@@ -23,12 +23,12 @@ const MicroAppContent: React.FC<MicroAppContentProps> = ({
 
 const createScript = (code?: string): string => {
   return `(function(window, self, global, document) {
-      ${code}\n
+      \n${code}\n
     }).bind(window.__wujie__)(
       window.__wujie__.proxy,
       window.__wujie__.proxy,
       window.__wujie__.proxy,
-      window.__wujie__.document,
+      window.__wujie__.proxy.document,
     )`;
 };
 
@@ -68,32 +68,14 @@ const MicroApp: React.FC<MicroAppProps> = (props) => {
     const win = iframeRef.current?.contentWindow;
     if (win) {
       // @ts-ignore
-      win.__wujie__ = {
-        document: shadowRoot
-      }
+      win.__wujie__ = {}
       // @ts-ignore
-      win.__wujie__.proxy = new Proxy(
-        { version: "0.1" },
-        {
-          get(target, key) {
-            console.log(key)
-            // @ts-ignore
-            return Reflect.get(shadowRoot, key);
-          },
-          set(target, key, value) {
-            console.log(key)
-            // @ts-ignore
-            return Reflect.set(shadowRoot, key, value);
-          },
-        }
-      );
+      win.__wujie__.proxy = createProxy(shadowRoot, win, window)
     }
     // @ts-ignore
     shadowRoot?.appendChild(win?.document.head);
     // @ts-ignore
     shadowRoot?.appendChild(win?.document.body);
-    // @ts-ignore
-    patchDocument2Shadow(shadowRoot, win?.document)
     // 处理script
     Promise.all(
       scriptList.map((sc) => {
@@ -103,7 +85,7 @@ const MicroApp: React.FC<MicroAppProps> = (props) => {
               .then((res) => res.text())
               .then((res) => {
                 sc.removeAttribute("src");
-                sc.innerText = res;
+                sc.innerHTML = res;
                 resolve(sc);
               });
           }
@@ -117,8 +99,7 @@ const MicroApp: React.FC<MicroAppProps> = (props) => {
       list.forEach((item) => {
         const s = win?.document.createElement("script");
         if (s) {
-          s.innerText = createScript(item.innerText)
-          // s.innerText = item.innerText
+          s.innerHTML = createScript(item.innerHTML)
           if (html) {
             html.appendChild(s);
           }
